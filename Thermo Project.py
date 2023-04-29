@@ -12,6 +12,9 @@ def getCelciusFromFahrenheit(tf):
 def getSquMeterFromSquFt(squFt):
     return squFt * 0.092903
 
+def celciusToKelvin(cel):
+    return cel + 273.15
+
 def getMeterFromFeet(feet):
     return feet * 0.3048
 
@@ -67,14 +70,15 @@ def getDryAirEnthalpyFlow(temperature, pressure, massFlow):
 def getRequiredRefrigerant(qout):
     return .2893 * qout
 
+def getDryAirMassFlowRate(pressure, vaporpressure, volumeflowrate, temperature):
+    return volumeflowrate / (air.v(T=temperature) + getSpecificHumidity(pressure, vaporpressure) * h2o.v(T=temperature))
+
+def getVaporMassFlowRate(pressure, vaporpressure, volumeflowrate, temperature):
+    return volumeflowrate / (air.v(T=temperature) / getSpecificHumidity(pressure, vaporpressure) + h2o.v(T=temperature))
+
 # Define initial variables that will be used throughout the whole of the script
 # Eventually some if not all will be expanded to be variable inputs for making graphs
 
-# Values related to the people
-amountPeople = 18000 # Persons
-surfaceAreaPerson = 1.8 # m^2
-heatGenerationPerson = 58.2 # W/m^2
-waterGenerationPerson = 16.7 # g/hour
 
 # Values related to the game
 gameLength = 2.5 # hours
@@ -129,4 +133,47 @@ print("Rink Heat Loss: " + str(rinkConvection) + " kW")
 
 # Standard atmospheric conditions
 airTemperature = 40 # C
-airHumidity = 80 # %
+airHumidity = 22 # %
+
+# Values related to the people
+amountPeople = 18000 # Persons
+surfaceAreaPerson = 1.8 # m^2
+heatGenerationPerson = 58.2 # W/m^2
+waterBreathGenerationPerson = 16.7 / 3600# g/s
+waterSweatGenerationPerson = 3.5 * 1000 / 3600 # g/s
+playerHeatGeneration = 1000 # W/m^2
+numberPlayers = 6 * 12
+
+# Related to hvac analysis
+mDotPeople = waterBreathGenerationPerson * amountPeople + numberPlayers * waterSweatGenerationPerson
+qDotPeople = surfaceAreaPerson * heatGenerationPerson + playerHeatGeneration * numberPlayers
+qDotIce = -rinkConvection
+
+stateOneVaporPressure = getWaterPressure(celciusToKelvin(airTemperature), airHumidity / 100)
+stateOneAirPressure = getDryAirPressure(airPressure, stateOneVaporPressure)
+print("State One, Vapor Pressure: " + str(stateOneVaporPressure) + " kPa")
+
+dryAirMassFlowRate = getDryAirMassFlowRate(airPressure, stateOneVaporPressure, hvacVolumeFlowRate, celciusToKelvin(airTemperature))
+stateOneVaporFlowRate = getVaporMassFlowRate(airPressure, stateOneVaporPressure, hvacVolumeFlowRate, celciusToKelvin(airTemperature))
+print("Dry Air Flow Rate: " + str(dryAirMassFlowRate) + " kg/s, Vapor Flow Rate: " + str(stateOneVaporFlowRate) + " kg/s")
+
+stateTwoVaporPressure = getWaterPressure(celciusToKelvin(desiredTemperature), desiredHumidity / 100)
+stateTwoAirPressure = getDryAirPressure(airPressure, stateTwoVaporPressure)
+print("State Two, Vapor Pressure: " + str(stateTwoVaporPressure) + " kPa")
+
+stateTwoVaporFlowRate = getVaporMassFlowRate(airPressure, stateTwoVaporPressure, hvacVolumeFlowRate, celciusToKelvin(desiredTemperature))
+print("State Two Vapor Flow Rate: " + str(stateOneVaporFlowRate) + " kg/s")
+
+mDotAdditive = stateTwoVaporFlowRate - stateOneVaporFlowRate - mDotPeople
+print("Water Adjustment Needed: " + str(mDotAdditive) + " kg/s")
+
+inletEnthalpyDot = getWaterEnthalpyFlow(celciusToKelvin(airTemperature), airPressure, stateOneVaporFlowRate) + getWaterEnthalpyFlow(celciusToKelvin(desiredTemperature), airPressure, mDotPeople) + getWaterEnthalpyFlow(300, airPressure, mDotAdditive) + getDryAirEnthalpyFlow(celciusToKelvin(airTemperature), airPressure, dryAirMassFlowRate)
+outletEnthalpyDot = getWaterEnthalpyFlow(celciusToKelvin(desiredTemperature), airPressure, stateTwoVaporFlowRate) + getDryAirEnthalpyFlow(celciusToKelvin(desiredTemperature), airPressure, dryAirMassFlowRate)
+
+qNetDot = outletEnthalpyDot - inletEnthalpyDot - qDotPeople + qDotIce
+qNet = qNetDot * gameLength * 3600
+
+energyCost = 0.1 # $ / kW-h
+totalCost = abs(qNetDot) * gameLength * energyCost 
+
+print("Energy Required For A Game: " + str(qNet) + " kJ, " + str(qNetDot) + " kW, with total cost of " + str(totalCost) + "$")
