@@ -1,6 +1,19 @@
 import matplotlib
 import psychrolib
 import pyromat as pm
+import ht
+from pyfluids import Fluid, FluidsList, Input
+import math
+
+# helper function for getting into units better suited to our problem
+def getCelciusFromFahrenheit(tf):
+    return (tf - 32) / 1.8
+
+def getSquMeterFromSquFt(squFt):
+    return squFt * 0.092903
+
+def getMeterFromFeet(feet):
+    return feet * 0.3048
 
 # Define Functions that will be used throughout the code
 
@@ -66,16 +79,52 @@ waterGenerationPerson = 16.7 # g/hour
 # Values related to the game
 gameLength = 2.5 # hours
 
-# Values related to the ice rink
-rinkConvection = 0 # Lookup
-rinkArea = 0 # Lookup
+# Stadium size information
+stadiumFloorArea = getSquMeterFromSquFt(675000) # m^2
+stadiumSizeRatio = 85/200
+stadiumLength = math.sqrt(stadiumFloorArea / (1 + stadiumSizeRatio)) # m
+stadiumWidth = stadiumFloorArea / stadiumLength # m
+arenaWidth = getMeterFromFeet(85 * 10 / 1.5)
+arenaLength = getMeterFromFeet(200 * 12.5 / 2.5)
+stadiumHeight = 15 # m (Guess for now cant find any actual data)
+
+print("Stadium Floor Area: " + str(stadiumFloorArea) + " , Stadium Length: " + str(stadiumLength) + " , Stadium Width: " + str(stadiumWidth))
 
 # Desired conditions to be mainted throughout the game
 desiredHumidity = 30 # %
-desiredTemperature = 25 + 273.15 # K
+desiredTemperature = getCelciusFromFahrenheit(63) # C
+airPressure = 84.0 # Kpa
+
+# HVAC information
+hvacVolumeFlowRate = 724000 / 60 * 0.03# m^3 / s
+print("Air Flow: " + str(hvacVolumeFlowRate))
+
+# Ice rink related values
+rinkArea = getSquMeterFromSquFt(19000) # m^2
+rinkLength = getMeterFromFeet(200) # m
+rinkIceTemperature = getCelciusFromFahrenheit(22) # C
+rinkAirSpeed = hvacVolumeFlowRate / (arenaWidth * stadiumHeight)
+print("Air Speed: " + str(rinkAirSpeed))
+
+# Related to determining the heat loss through the ice
+filmTemperature = (desiredTemperature + rinkIceTemperature) / 2
+
+# To get air fluid properties at film temp
+airFluid = Fluid(FluidsList.Air).with_state(Input.temperature(filmTemperature), Input.pressure(airPressure * 1000))
+airDensity = airFluid.density # kg/m^3
+airThermalConduction = airFluid.conductivity
+airKinematicViscosity = airFluid.kinematic_viscosity # Std
+airReynoldsNumber = rinkAirSpeed * rinkLength / airKinematicViscosity
+airPrandtlNumber = airFluid.prandtl
+rinkNu = ht.conv_external.Nu_external_horizontal_plate(airReynoldsNumber, airPrandtlNumber)
+rinkConvectionCoe = rinkNu * airThermalConduction / rinkLength
+
+
+# Goal of section
+rinkConvection = rinkArea * rinkConvectionCoe * (desiredTemperature - filmTemperature) / 1000 # kW
+print("Rink Heat Loss: " + str(rinkConvection))
+
 
 # Standard atmospheric conditions
-airTemperature = 40 + 237.15 # K
+airTemperature = 40 # C
 airHumidity = 80 # %
-
-print(getDryAirEnthalpy(298, 99))
