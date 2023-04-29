@@ -95,7 +95,7 @@ stadiumHeight = 15 # m (Guess for now cant find any actual data)
 print("Stadium Floor Area: " + str(stadiumFloorArea) + "m^2 , Stadium Length: " + str(stadiumLength) + "m , Stadium Width: " + str(stadiumWidth) + "m")
 
 # Desired conditions to be mainted throughout the game
-desiredHumidity = 30 # %
+desiredHumidity = 35 # %
 desiredTemperature = getCelciusFromFahrenheit(63) # C
 airPressure = 84.0 # Kpa
 
@@ -146,7 +146,7 @@ numberPlayers = 6 * 12
 
 # Related to hvac analysis
 mDotPeople = (waterBreathGenerationPerson * amountPeople + numberPlayers * waterSweatGenerationPerson) / 1000
-qDotPeople = surfaceAreaPerson * heatGenerationPerson + playerHeatGeneration * numberPlayers
+qDotPeople = surfaceAreaPerson * heatGenerationPerson + playerHeatGeneration * numberPlayers / 1000
 qDotIce = -rinkConvection
 print("People Water Production: " + str(mDotPeople) + " kg/s")
 
