@@ -103,7 +103,8 @@ print("Air Flow: " + str(hvacVolumeFlowRate) + "m^3/s")
 rinkArea = getSquMeterFromSquFt(19000) # m^2
 rinkLength = getMeterFromFeet(200) # m
 rinkIceTemperature = getCelciusFromFahrenheit(22) # C
-rinkAirSpeed = hvacVolumeFlowRate / (arenaWidth * stadiumHeight)
+rinkAirSpeedAdjustment = 10
+rinkAirSpeed = hvacVolumeFlowRate / (arenaWidth * stadiumHeight) * rinkAirSpeedAdjustment
 print("Air Speed: " + str(rinkAirSpeed) + "m/s")
 
 # Related to determining the heat loss through the ice
@@ -118,10 +119,11 @@ airReynoldsNumber = rinkAirSpeed * rinkLength / airKinematicViscosity
 airPrandtlNumber = airFluid.prandtl
 rinkNu = ht.conv_external.Nu_external_horizontal_plate(airReynoldsNumber, airPrandtlNumber)
 rinkConvectionCoe = rinkNu * airThermalConduction / rinkLength
+print("Ice Convection Coefficient: " + str(rinkConvectionCoe))
 
 
 # Goal of section
-rinkConvection = rinkArea * rinkConvectionCoe * (desiredTemperature - filmTemperature) / 1000 # kW
+rinkConvection = rinkArea * rinkConvectionCoe * (desiredTemperature - rinkIceTemperature) / 1000 # kW
 print("Rink Heat Loss: " + str(rinkConvection) + " kW")
 
 
