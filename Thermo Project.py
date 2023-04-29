@@ -88,7 +88,7 @@ arenaWidth = getMeterFromFeet(85 * 10 / 1.5)
 arenaLength = getMeterFromFeet(200 * 12.5 / 2.5)
 stadiumHeight = 15 # m (Guess for now cant find any actual data)
 
-print("Stadium Floor Area: " + str(stadiumFloorArea) + " , Stadium Length: " + str(stadiumLength) + " , Stadium Width: " + str(stadiumWidth))
+print("Stadium Floor Area: " + str(stadiumFloorArea) + "m^2 , Stadium Length: " + str(stadiumLength) + "m , Stadium Width: " + str(stadiumWidth) + "m")
 
 # Desired conditions to be mainted throughout the game
 desiredHumidity = 30 # %
@@ -97,17 +97,17 @@ airPressure = 84.0 # Kpa
 
 # HVAC information
 hvacVolumeFlowRate = 724000 / 60 * 0.03# m^3 / s
-print("Air Flow: " + str(hvacVolumeFlowRate))
+print("Air Flow: " + str(hvacVolumeFlowRate) + "m^3/s")
 
 # Ice rink related values
 rinkArea = getSquMeterFromSquFt(19000) # m^2
 rinkLength = getMeterFromFeet(200) # m
 rinkIceTemperature = getCelciusFromFahrenheit(22) # C
 rinkAirSpeed = hvacVolumeFlowRate / (arenaWidth * stadiumHeight)
-print("Air Speed: " + str(rinkAirSpeed))
+print("Air Speed: " + str(rinkAirSpeed) + "m/s")
 
 # Related to determining the heat loss through the ice
-filmTemperature = (desiredTemperature + rinkIceTemperature) / 2
+filmTemperature = (desiredTemperature + rinkIceTemperature) / 2 
 
 # To get air fluid properties at film temp
 airFluid = Fluid(FluidsList.Air).with_state(Input.temperature(filmTemperature), Input.pressure(airPressure * 1000))
@@ -122,7 +122,7 @@ rinkConvectionCoe = rinkNu * airThermalConduction / rinkLength
 
 # Goal of section
 rinkConvection = rinkArea * rinkConvectionCoe * (desiredTemperature - filmTemperature) / 1000 # kW
-print("Rink Heat Loss: " + str(rinkConvection))
+print("Rink Heat Loss: " + str(rinkConvection) + " kW")
 
 
 # Standard atmospheric conditions
