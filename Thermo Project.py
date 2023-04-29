@@ -145,9 +145,10 @@ playerHeatGeneration = 1000 # W/m^2
 numberPlayers = 6 * 12
 
 # Related to hvac analysis
-mDotPeople = waterBreathGenerationPerson * amountPeople + numberPlayers * waterSweatGenerationPerson
+mDotPeople = (waterBreathGenerationPerson * amountPeople + numberPlayers * waterSweatGenerationPerson) / 1000
 qDotPeople = surfaceAreaPerson * heatGenerationPerson + playerHeatGeneration * numberPlayers
 qDotIce = -rinkConvection
+print("People Water Production: " + str(mDotPeople) + " kg/s")
 
 stateOneVaporPressure = getWaterPressure(celciusToKelvin(airTemperature), airHumidity / 100)
 stateOneAirPressure = getDryAirPressure(airPressure, stateOneVaporPressure)
